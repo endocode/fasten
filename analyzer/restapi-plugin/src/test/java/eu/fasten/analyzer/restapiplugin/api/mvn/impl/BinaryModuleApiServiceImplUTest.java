@@ -18,6 +18,7 @@
 package eu.fasten.analyzer.restapiplugin.api.mvn.impl;
 
 import eu.fasten.core.data.metadatadb.MetadataDao;
+import static org.mockito.Mockito.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -41,6 +42,14 @@ public class BinaryModuleApiServiceImplUTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void shouldCallDaoGetPkgBinaryModMethod() {
+        String pkgName = "au.org";
+        String pkgVersion = "1.1.1";
+        service.getPackageBinaryModules(pkgName, pkgVersion);
+        verify(kbDao, times(1)).getPackageBinaryModules(pkgName, pkgVersion);
     }
 
     @Test
