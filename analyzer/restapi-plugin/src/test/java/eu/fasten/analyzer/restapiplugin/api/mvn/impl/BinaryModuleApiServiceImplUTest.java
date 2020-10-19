@@ -22,12 +22,10 @@ import eu.fasten.core.data.metadatadb.MetadataDao;
 import static org.mockito.Mockito.*;
 
 import org.jooq.DSLContext;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 
 import javax.ws.rs.core.Response;
 
@@ -35,25 +33,18 @@ import javax.ws.rs.core.Response;
 public class BinaryModuleApiServiceImplUTest {
 
     @Mock
-    Response response;
-
-    @Mock
-    MetadataDao kbDao;
-
-    @Mock
     DSLContext dslContext;
 
     @InjectMocks
     private final BinaryModuleApiServiceImpl service = new BinaryModuleApiServiceImpl();
+    private final RestAPIPlugin.RestAPIExtension restExt = new RestAPIPlugin.RestAPIExtension(9090, "url", "user");
 
-    private RestAPIPlugin.RestAPIExtension restAPIExtension;
+    public final MetadataDao kbDao = RestAPIPlugin.RestAPIExtension.kbDao;
 
-    @BeforeEach
-    public void setUp() {
+    @BeforeAll
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-
-        restAPIExtension = new RestAPIPlugin.RestAPIExtension(9090, "url", "user");
-        restAPIExtension.setDBConnection(dslContext);
+        kbDao.setContext(dslContext);
     }
 
     @Test
