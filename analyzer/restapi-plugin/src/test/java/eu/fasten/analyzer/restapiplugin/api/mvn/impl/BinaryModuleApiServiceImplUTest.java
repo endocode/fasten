@@ -17,12 +17,16 @@
  */
 package eu.fasten.analyzer.restapiplugin.api.mvn.impl;
 
+import eu.fasten.analyzer.restapiplugin.RestAPIPlugin;
 import eu.fasten.core.data.metadatadb.MetadataDao;
 import static org.mockito.Mockito.*;
+
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import javax.ws.rs.core.Response;
@@ -36,12 +40,20 @@ public class BinaryModuleApiServiceImplUTest {
     @Mock
     MetadataDao kbDao;
 
+    @Mock
+    DSLContext dslContext;
+
     @InjectMocks
     private final BinaryModuleApiServiceImpl service = new BinaryModuleApiServiceImpl();
+
+    private RestAPIPlugin.RestAPIExtension restAPIExtension;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+
+        restAPIExtension = new RestAPIPlugin.RestAPIExtension(9090, "url", "user");
+        restAPIExtension.setDBConnection(dslContext);
     }
 
     @Test
@@ -53,39 +65,23 @@ public class BinaryModuleApiServiceImplUTest {
     }
 
     @Test
-    public void shouldReturnBinaryMod_whenGetPkgBinaryMod() {
-        // getPackageBinaryModules: should return 200 and the result of the string
-        // if pkg binary modules are found
+    public void shouldCallDaoGetBinaryModMetadataMethod() {
+        String pkgName = "au.org";
+        String pkgVersion = "1.1.1";
+        String binaryMod = "xx";
+        service.getBinaryModuleMetadata(pkgName, pkgVersion, binaryMod);
+        verify(kbDao, times(1)).getBinaryModuleMetadata(pkgName, pkgVersion, binaryMod);
     }
 
     @Test
-    public void shouldReturnErrorMsg_whenPkgBinaryModNotFound() {
-        // getPackageBinaryModules: should return 404
-        // if pkg binary modules are not found
-    }
+    public void shouldCallDaoGetBinaryModFilesMethod() {
+        String pkgName = "au.org";
+        String pkgVersion = "1.1.1";
+        String binaryMod = "xx";
 
-    @Test
-    public void shouldReturnMetadata_whenGetBinaryModMetadata() {
-        // getBinaryModuleMetadata: should return 200 and the result of the string
-        // if pkg binary modules metadata are found
-    }
+        when(service.getBinaryModuleFiles(pkgName, pkgVersion, binaryMod)).thenReturn(response);
 
-    @Test
-    public void shouldReturnErrorMsg_whenGetBinaryModMetadataNotFound() {
-        // getBinaryModuleMetadata: should return 404
-        // if pkg binary modules are not found
-    }
-
-    @Test
-    public void shouldReturnFilesInfo_whenGetBinaryModFiles() {
-        // getBinaryModuleFiles: should return 200 and the result of the string
-        // if pkg binary modules are found
-    }
-
-    @Test
-    public void shouldReturnErrorMsg_whenGetBinaryModFilesNotFound() {
-        // getBinaryModuleFiles: should return 404
-        // if pkg binary modules are not found
+        verify(kbDao, times(1)).getBinaryModuleFiles(pkgName, pkgVersion, binaryMod);
     }
 
 }
