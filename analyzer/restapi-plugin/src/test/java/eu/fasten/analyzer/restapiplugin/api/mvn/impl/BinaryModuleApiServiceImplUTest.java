@@ -19,60 +19,71 @@ package eu.fasten.analyzer.restapiplugin.api.mvn.impl;
 
 import eu.fasten.analyzer.restapiplugin.RestAPIPlugin;
 import eu.fasten.core.data.metadatadb.MetadataDao;
-import static org.mockito.Mockito.*;
 
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+//import org.mockito.InjectMocks;
+//import org.mockito.Mock;
 
-import javax.ws.rs.core.Response;
-
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class BinaryModuleApiServiceImplUTest {
 
     @Mock
-    DSLContext dslContext;
+    MetadataDao kbDao;
 
     @InjectMocks
     private final BinaryModuleApiServiceImpl service = new BinaryModuleApiServiceImpl();
-    private final RestAPIPlugin.RestAPIExtension restExt = new RestAPIPlugin.RestAPIExtension(9090, "url", "user");
+//    private final RestAPIPlugin.RestAPIExtension restExt = new RestAPIPlugin.RestAPIExtension();
 
-    public final MetadataDao kbDao = RestAPIPlugin.RestAPIExtension.kbDao;
-
-    @BeforeAll
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        kbDao.setContext(dslContext);
+//        restExt.setDBConnection(dslContext);
+        var dslContext = Mockito.mock(DSLContext.class);
+        var restExt = new RestAPIPlugin.RestAPIExtension();
+        restExt.setDBConnection(dslContext);
     }
 
     @Test
     public void shouldCallDaoGetPkgBinaryModMethod() {
+//        var kbDao = Mockito.mock(MetadataDao.class);
         String pkgName = "au.org";
         String pkgVersion = "1.1.1";
-        service.getPackageBinaryModules(pkgName, pkgVersion);
-        verify(kbDao, times(1)).getPackageBinaryModules(pkgName, pkgVersion);
+        short offset = 1;
+        short limit = 5;
+        service.getPackageBinaryModules(pkgName, pkgVersion, offset, limit);
+        verify(kbDao, times(1)).getPackageBinaryModules(pkgName, pkgVersion, offset, limit);
     }
 
     @Test
     public void shouldCallDaoGetBinaryModMetadataMethod() {
+//        var kbDao = Mockito.mock(MetadataDao.class);
         String pkgName = "au.org";
         String pkgVersion = "1.1.1";
         String binaryMod = "xx";
-        service.getBinaryModuleMetadata(pkgName, pkgVersion, binaryMod);
-        verify(kbDao, times(1)).getBinaryModuleMetadata(pkgName, pkgVersion, binaryMod);
+        short offset = 1;
+        short limit = 5;
+        service.getBinaryModuleMetadata(pkgName, pkgVersion, binaryMod, offset, limit);
+        verify(kbDao, times(1)).getBinaryModuleMetadata(pkgName, pkgVersion, binaryMod, offset, limit);
     }
 
-    @Test
-    public void shouldCallDaoGetBinaryModFilesMethod() {
-        String pkgName = "au.org";
-        String pkgVersion = "1.1.1";
-        String binaryMod = "xx";
-
-        when(service.getBinaryModuleFiles(pkgName, pkgVersion, binaryMod)).thenReturn(response);
-
-        verify(kbDao, times(1)).getBinaryModuleFiles(pkgName, pkgVersion, binaryMod);
-    }
+//    @Test
+//    public void shouldCallDaoGetBinaryModFilesMethod() {
+//        String pkgName = "au.org";
+//        String pkgVersion = "1.1.1";
+//        String binaryMod = "xx";
+//
+//        when(service.getBinaryModuleFiles(pkgName, pkgVersion, binaryMod)).thenReturn(response);
+//
+//        verify(restExt.kbDao, times(1)).getBinaryModuleFiles(pkgName, pkgVersion, binaryMod);
+//    }
 
 }
