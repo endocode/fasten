@@ -1,7 +1,9 @@
 package eu.fasten.analyzer.restapiplugin.api.mvn;
 
+import eu.fasten.analyzer.restapiplugin.RestAPIPlugin;
 import eu.fasten.analyzer.restapiplugin.api.RestApplication;
 import eu.fasten.analyzer.restapiplugin.api.mvn.impl.PackageApiServiceImpl;
+import eu.fasten.core.data.metadatadb.MetadataDao;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -13,6 +15,8 @@ public class PackageApi {
 
     PackageApiService service = new PackageApiServiceImpl();
 
+    MetadataDao kbDao = RestAPIPlugin.RestAPIExtension.kbDao;
+
     @GET
     @Path("/{pkg}/versions")
     @Produces(MediaType.APPLICATION_JSON)
@@ -21,7 +25,7 @@ public class PackageApi {
                                        @QueryParam("offset") short offset,
                                        @DefaultValue(RestApplication.DEFAULT_PAGE_SIZE)
                                        @QueryParam("limit") short limit) {
-        return service.getPackageVersions(package_name, offset, limit);
+        return service.getPackageVersions(package_name, offset, limit, kbDao);
     }
 
     @GET
@@ -33,7 +37,7 @@ public class PackageApi {
                                       @QueryParam("offset") short offset,
                                       @DefaultValue(RestApplication.DEFAULT_PAGE_SIZE)
                                       @QueryParam("limit") short limit) {
-        return service.getPackageVersion(package_name, package_version, offset, limit);
+        return service.getPackageVersion(package_name, package_version, offset, limit, kbDao);
     }
 
     @GET
@@ -45,7 +49,7 @@ public class PackageApi {
                                        @QueryParam("offset") short offset,
                                        @DefaultValue(RestApplication.DEFAULT_PAGE_SIZE)
                                        @QueryParam("limit") short limit) {
-        return service.getPackageMetadata(package_name, package_version, offset, limit);
+        return service.getPackageMetadata(package_name, package_version, offset, limit, kbDao);
     }
 
     @GET
@@ -57,7 +61,7 @@ public class PackageApi {
                                         @QueryParam("offset") short offset,
                                         @DefaultValue(RestApplication.DEFAULT_PAGE_SIZE)
                                         @QueryParam("limit") short limit) {
-        return service.getPackageCallgraph(package_name, package_version, offset, limit);
+        return service.getPackageCallgraph(package_name, package_version, offset, limit, kbDao);
     }
 }
 
