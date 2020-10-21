@@ -41,10 +41,13 @@ public class PackageApiServiceImplUTest {
     @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+        // TODO: delete all comments before open the PR to merge this into `kbapi` branch
+        // you can do it by simply reverting the last commit ;)
     }
 
     @Test
     public void shouldCallDaoGetPkgVersionsMethod() {
+        // GIVEN **********
         String pkgName = "au.org";
         short offset = 1;
         short limit = 5;
@@ -52,18 +55,25 @@ public class PackageApiServiceImplUTest {
         String resultSet = "{\"fields\":[{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"id\",\"type\":\"BIGINT\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"package_version_id\",\"type\":\"BIGINT\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"name\",\"type\":\"CLOB\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"created_at\",\"type\":\"TIMESTAMP\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"metadata\",\"type\":\"JSONB\"}],\"records\":[]}\n";
         Response response = Response.status(200).entity(resultSet).build();
 
+        // Mock all possible DB calls the service might need
         when(mdDao.getPackageVersions(pkgName, offset, limit)).thenReturn(resultSet);
 
+        // WHEN **********
+        // you call this method...
         var servResp = service.getPackageVersions(pkgName, offset, limit, mdDao);
 
+        // THEN **********
+        // assert if the service response content is the expected one
 //        assertEquals(response, servResp);
         // FIXME: this might not work. Needs to find a way to assert the entity content and not the response object
 
+        // verify if the DB method was called once
         verify(mdDao, times(1)).getPackageVersions(pkgName, offset, limit);
     }
 
     @Test
     public void shouldCallDaoGetPkgVersionMethod() {
+        // GIVEN **********
         String pkgName = "au.org";
         String pkgVersion = "1.1.1";
         short offset = 1;
@@ -72,51 +82,73 @@ public class PackageApiServiceImplUTest {
         String resultSet = "{\"fields\":[{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"id\",\"type\":\"BIGINT\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"package_version_id\",\"type\":\"BIGINT\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"name\",\"type\":\"CLOB\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"created_at\",\"type\":\"TIMESTAMP\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"metadata\",\"type\":\"JSONB\"}],\"records\":[]}\n";
         Response response = Response.status(200).entity(resultSet).build();
 
+        // Mock all possible DB calls the service might need
         when(mdDao.getPackageVersion(pkgName, pkgVersion, offset, limit)).thenReturn(resultSet);
 
+        // WHEN **********
+        // you call this method...
         var servResp = service.getPackageVersion(pkgName, pkgVersion, offset, limit, mdDao);
 
+        // THEN **********
+        // assert if the service response content is the expected one
 //        assertEquals(response, servResp);
         // FIXME: this might not work. Needs to find a way to assert the entity content and not the response object
 
+        // verify if the DB method was called once
         verify(mdDao, times(1)).getPackageVersion(pkgName, pkgVersion, offset, limit);
     }
 
     @Test
     public void shouldCallDaoGetPkgMetadataMethod() {
+        // GIVEN **********
         String pkgName = "au.org";
         String pkgVersion = "1.1.1";
         short offset = 1;
         short limit = 5;
+        // TODO: update the result set to a correct one
         String resultSet = "{\"fields\":[{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"id\",\"type\":\"BIGINT\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"package_version_id\",\"type\":\"BIGINT\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"name\",\"type\":\"CLOB\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"created_at\",\"type\":\"TIMESTAMP\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"metadata\",\"type\":\"JSONB\"}],\"records\":[]}\n";
         Response response = Response.status(200).entity(resultSet).build();
 
+        // Mock all possible DB calls the service might need
         when(mdDao.getPackageMetadata(pkgName, pkgVersion, offset, limit)).thenReturn(resultSet);
 
+        // WHEN **********
+        // you call this method...
         var servResp = service.getPackageMetadata(pkgName, pkgVersion, offset, limit, mdDao);
 
+        // THEN **********
+        // assert if the service response content is the expected one
 //        assertEquals(response, servResp);
         // FIXME: this might not work. Needs to find a way to assert the entity content and not the response object
 
+        // verify if the DB method was called once
         verify(mdDao, times(1)).getPackageMetadata(pkgName, pkgVersion, offset, limit);
     }
 
     @Test
     public void shouldCallDaoGetPkgCallgraphMethod() {
+        // GIVEN **********
         String pkgName = "au.org";
         String pkgVersion = "1.1.1";
         short offset = 1;
         short limit = 5;
+        // TODO: update the result set to a correct one
         String resultSet = "{\"fields\":[{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"id\",\"type\":\"BIGINT\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"package_version_id\",\"type\":\"BIGINT\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"name\",\"type\":\"CLOB\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"created_at\",\"type\":\"TIMESTAMP\"},{\"schema\":\"public\",\"table\":\"binary_modules\",\"name\":\"metadata\",\"type\":\"JSONB\"}],\"records\":[]}\n";
         Response response = Response.status(200).entity(resultSet).build();
 
+        // Mock all possible DB calls the service might need
         when(mdDao.getPackageCallgraph(pkgName, pkgVersion, offset, limit)).thenReturn(resultSet);
 
+        // WHEN **********
+        // you call this method...
         var servResp = service.getPackageCallgraph(pkgName, pkgVersion, offset, limit, mdDao);
 
+        // THEN **********
+        // assert if the service response content is the expected one
 //        assertEquals(response, servResp);
         // FIXME: this might not work. Needs to find a way to assert the entity content and not the response object
 
+        // verify if the DB method was called once
         verify(mdDao, times(1)).getPackageCallgraph(pkgName, pkgVersion, offset, limit);
     }
 
