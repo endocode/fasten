@@ -1,37 +1,16 @@
 package eu.fasten.analyzer.complianceanalyzer;
 
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.common.collect.Lists;
 import eu.fasten.core.plugins.KafkaPlugin;
-import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.Configuration;
-import io.kubernetes.client.openapi.apis.BatchV1Api;
-import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1ReplicationController;
-import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.proto.Meta;
-import io.kubernetes.client.proto.V1;
-import io.kubernetes.client.util.Config;
-import io.kubernetes.client.util.KubeConfig;
-import io.kubernetes.client.util.Yaml;
 import org.json.JSONObject;
 import org.pf4j.Extension;
 import org.pf4j.Plugin;
 import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.DockerComposeContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -60,21 +39,6 @@ public class ComplianceAnalyzerPlugin extends Plugin {
         protected String consumerTopic = "fasten.RepoCloner.out";
         protected Throwable pluginError = null;
         protected String repoUrl;
-
-        /**
-         * Path to the Kubernetes cluster credentials file
-         */
-        protected final String clusterCredentialsFilePath = System.getProperty(CLUSTER_CREDENTIALS_ENV);
-
-        /**
-         * Placeholder for the repository URL in the Kubernetes Job file
-         */
-        protected final String repositoryUrlPlaceholder = "REPOSITORY_URL";
-
-        /**
-         * Kubernetes namespace to be used.
-         */
-        protected String namespace = "default";
 
         @Override
         public Optional<List<String>> consumeTopic() {
@@ -110,111 +74,29 @@ public class ComplianceAnalyzerPlugin extends Plugin {
                     throw missingRepoUrlException;
                 }
 
-                // Connecting to the Kubernetes cluster
-                connectToCluster();
+                // Retrieving the Docker-compose file
+                File dockerComposeFile =
+                        new File(ComplianceAnalyzerPlugin.class.getResource("/docker-compose.yml").getPath());
 
-                // Starting RabbitMQ
-                applyRabbitMQ();
+                // Launching Quartermaster
+                try (DockerComposeContainer environment =
+                             new DockerComposeContainer(dockerComposeFile)
+                                     .withEnv("REPOSITORY_URL", repoUrl)
+                                     .withExposedService("alpha", 8080, Wait.forHttp("/health")) // DGraph
+                                     .withExposedService("rabbitmq", 5672) // an initContainer wait for RabbitMQ
+                ) {
 
-                // Starting the QMSTR Job
-                applyK8sJob();
+                    environment.start();
+
+                    // TODO Introduce waiting instruction(s)
+                    // environment.wait(10000L);
+                }
 
             } catch (Exception e) { // Fasten error-handling guidelines
                 logger.error(e.getMessage());
                 setPluginError(e);
             }
 
-        }
-
-        protected void connectToCluster() throws IOException {
-            try {
-                // If we don't specify credentials when constructing the client, the client library will
-                // look for credentials via the environment variable GOOGLE_APPLICATION_CREDENTIALS.
-                GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream(clusterCredentialsFilePath))
-                        .createScoped(Lists.newArrayList("https://www.googleapis.com/auth/cloud-platform"));
-
-                KubeConfig.registerAuthenticator(new ReplacedGCPAuthenticator(credentials));
-
-                ApiClient client = Config.defaultClient();
-                Configuration.setDefaultApiClient(client);
-            } catch (IOException e) {
-                throw new IOException("Couldn't find cluster credentials at: " + clusterCredentialsFilePath);
-            }
-        }
-
-        protected void applyRabbitMQ() throws IOException, ApiException {
-
-            try {
-
-                // Deploying the RabbitMQ ReplicationController
-                String replicationControllerFilePath = "/k8s/rabbitmq/replicationcontroller.yaml";
-                File replicationControllerFile = new File(ComplianceAnalyzerPlugin.class.getResource(replicationControllerFilePath).getPath());
-                V1ReplicationController replicationController = Yaml.loadAs(replicationControllerFile, V1ReplicationController.class);
-                V1ReplicationController deployedReplicationControllerMap = new CoreV1Api().createNamespacedReplicationController(namespace, replicationController, null, null, null);
-                logger.info("Deployed ReplicationController: " + deployedReplicationControllerMap);
-
-                // Deploying the RabbitMQ Service
-                String serviceFilePath = "/k8s/rabbitmq/service.yaml";
-                File serviceFile = new File(ComplianceAnalyzerPlugin.class.getResource(serviceFilePath).getPath());
-                V1Service service = Yaml.loadAs(serviceFile, V1Service.class);
-                V1Service deployedService = new CoreV1Api().createNamespacedService(namespace, service, null, null, null);
-                logger.info("Deployed ReplicationController: " + deployedService);
-
-            } catch (ApiException e) {
-                throw new ApiException("Exception while deploying a RabbitMQ Kubernetes resource: " + e);
-            }
-
-        }
-
-        protected void applyK8sJob() throws ApiException, IOException {
-
-            try {
-
-                // Deploying the QMSTR ConfigMap
-                String configMapFilePath = "/k8s/qmstr/master-config.yaml";
-                File configMapFile = new File(ComplianceAnalyzerPlugin.class.getResource(configMapFilePath).getPath());
-                V1ConfigMap configMap = Yaml.loadAs(configMapFile, V1ConfigMap.class);
-                V1ConfigMap deployedConfigMap = new CoreV1Api().createNamespacedConfigMap(namespace, configMap, null, null, null);
-                logger.info("Deployed ConfigMap: " + deployedConfigMap);
-
-                // Deploying the QMSTR Service
-                String serviceFilePath = "/k8s/dgraph/service.yaml";
-                File serviceFile = new File(ComplianceAnalyzerPlugin.class.getResource(serviceFilePath).getPath());
-                V1Service service = Yaml.loadAs(serviceFile, V1Service.class);
-                V1Service deployedService = new CoreV1Api().createNamespacedService(namespace, service, null, null, null);
-                logger.info("Deployed Service: " + deployedService);
-
-                // Patching the QMSTR Job
-                String jobFilePath = "/k8s/qmstr/job.yaml";
-                String jobFileFullPath = ComplianceAnalyzerPlugin.class.getResource(jobFilePath).getPath();
-                Path jobFileSystemPath = Paths.get(jobFileFullPath);
-                Charset jobFileCharset = StandardCharsets.UTF_8;
-                String jobFileContent = Files.readString(jobFileSystemPath, jobFileCharset);
-                jobFileContent = jobFileContent.replaceAll(repositoryUrlPlaceholder, repoUrl);
-                Files.write(jobFileSystemPath, jobFileContent.getBytes(jobFileCharset));
-
-                // Deploying the QMSTR Job
-                Yaml.addModelMap("v1", "Job", V1Job.class);
-                File jobFile = new File(jobFileFullPath);
-                V1Job yamlJob = Yaml.loadAs(jobFile, V1Job.class);
-                V1Job deployedJob = new BatchV1Api().createNamespacedJob(namespace, yamlJob, null, null, null);
-                logger.info("Deployed Job: " + deployedJob);
-
-            } catch (IOException e) {
-                throw new IOException("Exception while patching the QMSTR Job: " + e);
-            } catch (ApiException e) {
-                throw new ApiException("Exception while deploying a QMSTR Kubernetes resource: " + e);
-            }
-
-        }
-
-        /**
-         * Sets the Kubernetes namespace in which QMSTR will be deployed.
-         *
-         * @param namespace namespace to be used by this plugin.
-         */
-        protected void setNamespace(String namespace) {
-            this.namespace = namespace;
         }
 
         @Override
