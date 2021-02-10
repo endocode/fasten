@@ -47,7 +47,7 @@ services:
         # Patching the pom.xml file
         echo "Patching the pom.xml file..."
         cd /home/configure
-        if python -q insert-build-plugin.py qmstr-maven-plugin.xml ; then
+        if python -q insert-build-plugin.py qmstr-maven-plugin.xml > /dev/null; then
           echo "...pom.xml file patched successfully."
         else
           echo "...pom.xml file patching failed."
@@ -66,17 +66,53 @@ services:
       start_period: 2s
       interval: 2s
 
-#  waiter:
-#    image: busybox:1.32.1
-#    depends_on:
-#      pom-patcher:
-#        condition: service_healthy
-#    command:
-#      - "ls"
-#      - "-al"
-#      - "/buildroot/project"
-#    volumes:
-#      - buildroot-volume:/buildroot
+  # Quartermaster master
+  master:
+    image: endocodeci/qmstr-master:sha-6f14b29
+    depends_on:
+
+      # Cloned & patched repository
+      - repo-cloner
+      - pom-patcher
+
+      # DGraph
+      #- zero
+      #- alpha
+      #- ratel
+
+      # RabbitMQ and its healthcheck initContainer
+      #- rabbitmq
+      #- wait-for-rabbit
+
+    entrypoint: [ "sh", "-c" ]
+    command:
+      - |
+        set -e
+
+        # Moving to the repository folder: counting files & directories (including hidden ones) will be easier
+        cd /var/qmstr/buildroot/project
+
+        # Counting files & directories (including hidden ones) of the project being cloned.
+        # If < 2 (only the `.git` folder is present), cloning has not terminated
+        while [ "$$(find . ! -name . -prune -print | grep -c /)" -lt 2 ]; do
+          echo "...still cloning..."
+          sleep 2
+        done
+        echo "...repository has been cloned."
+
+        # Checking whether the repository has been already patched or not
+        while [ -z \"$$(cat /var/qmstr/buildroot/project/pom.xml | grep -i \"qmstr\")\" ]; do
+          echo "...waiting for the pom.xml to be patched."
+          sleep 3
+        done
+        echo "The pom.xml file has been patched."
+    ports:
+      - 50051:50051
+    environment:
+      - SERVER_BUILDPATH="/var/qmstr/buildroot"
+    volumes:
+      - ./qmstr-config.yaml:/home/qmstr/config/qmstr.yaml
+      - buildroot-volume:/var/qmstr/buildroot/
 
 #  # DGraph
 #  # From: https://github.com/dgraph-io/dgraph/blob/master/contrib/config/docker/docker-compose.yml
@@ -111,7 +147,7 @@ services:
 #    command: dgraph-ratel
 #    logging:
 #      driver: none
-#
+
 #  # RabbitMQ
 #  rabbitmq:
 #    image: rabbitmq:3-management
@@ -128,33 +164,6 @@ services:
 #    environment:
 #      RABBIT_HOST: "rabbitmq"
 #      RABBIT_PORT: "5672"
-#
-#  # Orchestrator (former `qmstr-master`)
-#  master:
-#    image: endocodeci/qmstr-master:sha-6f14b29
-#    entrypoint: "/usr/local/bin/qmstr-master"
-#    command: "--config /home/qmstr/config/qmstr.yaml"
-#    depends_on:
-#
-#      # Repository cloner
-#      - repo-cloner
-#
-#      # DGraph
-#      - zero
-#      - alpha
-#      - ratel
-#
-#      # RabbitMQ and its healthcheck initContainer
-#      - rabbitmq
-#      - wait-for-rabbit
-#
-#    ports:
-#      - 50051:50051
-#    environment:
-#      SERVER_BUILDPATH: "/var/qmstr/buildroot"
-#    volumes:
-#      - ./qmstr-config.yaml:/home/qmstr/config/qmstr.yaml
-#      - buildroot-volume:/var/qmstr/buildroot/
 
 volumes:
   buildroot-volume:
