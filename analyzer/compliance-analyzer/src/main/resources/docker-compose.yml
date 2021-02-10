@@ -2,18 +2,6 @@ version: '3.4'
 
 services:
 
-  # Fixes shared volume permissions
-  volume-permissions-fix:
-    image: busybox:1.32.1
-    entrypoint: ["sh", "-c"]
-    command:
-      - |
-        echo "Changing shared volume's permissions..."
-        chown -R 1000:1000 /buildroot
-        echo "...shared volume's permissions fixed."
-    volumes:
-      - buildroot-volume:/buildroot
-
   # Clones the repository
   repo-cloner:
     image: alpine/git:v2.26.2
@@ -21,18 +9,19 @@ services:
     # TODO Substitute repo URL with "${REPOSITORY_URL}"
     command:
       - |
-        # Waiting for the shared volume's permissions to be fixed
-        while [[ \"$$(stat -c '%U' /home/git/buildroot)\" == \"root\" ]]; do
-          echo "Waiting for shared volume's permissions to be fixed..."
-          sleep 1
-        done;
-        echo "Shared volume permissions are ok. Cloning..."
+        set -e
+
+        # Cloning the repository
         git clone --verbose https://github.com/bytedeco/javacv /home/git/buildroot/project
         echo "...cloning done."
-    depends_on:
-      - volume-permissions-fix
+
+        # Fixing shared volume permissions
+        echo "Assigning shared volume to $${SHARED_VOLUME_USER}..."
+        chown -R $${SHARED_VOLUME_USER} /home/git/buildroot
+        echo "...shared volume assigned to $${SHARED_VOLUME_USER}."
     environment:
       - REPOSITORY_URL
+      - SHARED_VOLUME_USER=1000:1000 # who will own the shared volume
     volumes:
       - buildroot-volume:/home/git/buildroot
 
@@ -40,11 +29,12 @@ services:
   pom-patcher:
     image: endocodeci/pom-patch:sha-c47d6c5
     entrypoint: ["sh", "-c"]
-    # TODO Fix permissions
     command:
       - |
+        set -e
+
         # Moving to the repository folder: counting files & directories (including hidden ones) will be easier
-        cd /home/configure/buildroot/project || exit 1
+        cd /home/configure/buildroot/project
 
         # Counting files & directories (including hidden ones) of the project being cloned.
         # If < 2 (only the `.git` folder is present), cloning has not terminated
@@ -56,11 +46,13 @@ services:
 
         # Patching the pom.xml file
         echo "Patching the pom.xml file..."
-        cd /home/configure || exit 1
-        chown -R 1000:1000 buildroot/project
-        chmod u+w buildroot/project/pom.xml
-        ls -al buildroot/project
-        python insert-build-plugin.py qmstr-maven-plugin.xml
+        cd /home/configure
+        if python -q insert-build-plugin.py qmstr-maven-plugin.xml ; then
+          echo "...pom.xml file patched successfully."
+        else
+          echo "...pom.xml file patching failed."
+          exit $$?
+        fi
     depends_on:
       - repo-cloner
     volumes:
@@ -166,4 +158,5 @@ services:
 
 volumes:
   buildroot-volume:
+
 
