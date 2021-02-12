@@ -142,7 +142,7 @@ services:
 
         # Waiting for DGraph alpha to be ready
         # python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health'))"
-        while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health'))")" -ne 200 ]; do
+        while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health').getcode())")" -ne 200 ]; do
           echo "...waiting for DGraph to be ready."
           sleep 3
         done
@@ -201,7 +201,7 @@ services:
 
         # Waiting for DGraph alpha to be ready
         # python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health'))"
-        while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health'))")" -ne 200 ]; do
+        while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health').getcode())")" -ne 200 ]; do
           echo "...waiting for DGraph to be ready."
           sleep 3
         done
