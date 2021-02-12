@@ -7,9 +7,9 @@ project:
   server:
     dbAddress: "alpha:9080"
     rpcAddress: "master:50051"
-  analysis:
-    - analyzer: scancode-analyzer
-      name: "Scancode Analyzer"
-      config:
-        workdir: "/var/qmstr/buildroot"
-        resultfile: "/var/qmstr/buildroot/scancode.json"
+  # analysis:
+  #   - analyzer: scancode-analyzer
+  #     name: "Scancode Analyzer"
+  #     config:
+  #       workdir: "/var/qmstr/buildroot"
+  #       resultfile: "/var/qmstr/buildroot/scancode.json"

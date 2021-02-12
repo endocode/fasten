@@ -57,33 +57,125 @@ services:
       - repo-cloner
     volumes:
       - buildroot-volume:/home/configure/buildroot
+
+  # DGraph
+  # From: https://github.com/dgraph-io/dgraph/blob/master/contrib/config/docker/docker-compose.yml
+  zero:
+    image: dgraph/dgraph:v20.11.0
+    volumes:
+      - /tmp/data:/dgraph
+    ports:
+      - 5080:5080
+      - 6080:6080
+    restart: on-failure
+    entrypoint: [ "bash", "-c" ]
+    command:
+      - |
+        set -ex
+        dgraph zero --my=zero:5080
+    logging:
+      driver: none
+  alpha:
+    image: dgraph/dgraph:v20.11.0
+    volumes:
+      - /tmp/data:/dgraph
+    ports:
+      - 8080:8080
+      - 9080:9080
+    restart: on-failure
+    entrypoint: [ "bash", "-c" ]
+    command:
+      - |
+        set -e
+        dgraph alpha --whitelist 0.0.0.0/0 --my=alpha:7080 --zero=zero:5080 --lru_mb 2048
+#    logging:
+#      driver: none
     healthcheck:
-      # TODO Move this to a `while` loop elsewhere
-      test: [
-        "CMD-SHELL",
-        "[ -z \"$$(cat pom.xml | grep -i \"qmstr\")\" ] && exit 1 || exit 0"
-      ]
-      start_period: 2s
-      interval: 2s
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+  ratel:
+    image: dgraph/dgraph:v20.11.0
+    ports:
+      - 8000:8000
+    command: dgraph-ratel
+    logging:
+      driver: none
 
   # Quartermaster master
   master:
     image: endocodeci/qmstr-master:sha-6f14b29
     depends_on:
-
       # Cloned & patched repository
-      - repo-cloner
-      - pom-patcher
-
+      repo-cloner:
+        condition: service_started
+      pom-patcher:
+        condition: service_started
       # DGraph
-      #- zero
-      #- alpha
-      #- ratel
+      zero:
+        condition: service_started
+      alpha:
+        condition: service_healthy
+      ratel:
+        condition: service_started
+    entrypoint: [ "sh", "-c" ]
+    command:
+      - |
+        set -e
+        set -x
 
-      # RabbitMQ and its healthcheck initContainer
-      #- rabbitmq
-      #- wait-for-rabbit
+        # Moving to the repository folder: counting files & directories (including hidden ones) will be easier
+        cd /var/qmstr/buildroot/project
 
+        # Counting files & directories (including hidden ones) of the project being cloned.
+        # If < 2 (only the `.git` folder is present), cloning has not terminated
+        while [ "$$(find . ! -name . -prune -print | grep -c /)" -lt 2 ]; do
+          echo "...still cloning..."
+          sleep 2
+        done
+        echo "...repository has been cloned."
+
+        # Checking whether the repository has been already patched or not
+        while [ -z \"$$(cat /var/qmstr/buildroot/project/pom.xml | grep -i \"qmstr\")\" ]; do
+          echo "...waiting for the pom.xml to be patched."
+          sleep 3
+        done
+        echo "...the pom.xml file has been patched."
+
+        # Waiting for DGraph alpha to be ready
+        # python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health'))"
+        while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health'))")" -ne 200 ]; do
+          echo "...waiting for DGraph to be ready."
+          sleep 3
+        done
+        echo "...DGraph is ready."
+
+        # Start the master process
+        /usr/local/bin/qmstr-master --config /home/qmstr/config/qmstr.yaml
+    ports:
+      - 50051:50051
+    environment:
+      - SERVER_BUILDPATH="/var/qmstr/buildroot"
+    volumes:
+      - ./qmstr-config.yaml:/home/qmstr/config/qmstr.yaml
+      - buildroot-volume:/var/qmstr/buildroot/
+
+  client:
+    image: endocode/qmstr-client-mvn:fasten-reporter-curl
+    depends_on:
+      # Master
+      master:
+        condition: service_started
+      # Cloned & patched repository
+      repo-cloner:
+        condition: service_started
+      pom-patcher:
+        condition: service_started
+      # DGraph
+      zero:
+        condition: service_started
+      alpha:
+        condition: service_healthy
+      ratel:
+        condition: service_started
     entrypoint: [ "sh", "-c" ]
     command:
       - |
@@ -106,66 +198,23 @@ services:
           sleep 3
         done
         echo "The pom.xml file has been patched."
-    ports:
-      - 50051:50051
+
+        # Waiting for DGraph alpha to be ready
+        # python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health'))"
+        while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health'))")" -ne 200 ]; do
+          echo "...waiting for DGraph to be ready."
+          sleep 3
+        done
+        echo "...DGraph is ready."
+
+        # Building the project
+        mvn package -Dmaven.test.skip=true
     environment:
-      - SERVER_BUILDPATH="/var/qmstr/buildroot"
+      - QMSTRADDRENV=master:50051
+      - QMSTR_MASTER=master:50051
+      - BUILDROOT=/var/qmstr/buildroot
     volumes:
-      - ./qmstr-config.yaml:/home/qmstr/config/qmstr.yaml
-      - buildroot-volume:/var/qmstr/buildroot/
-
-#  # DGraph
-#  # From: https://github.com/dgraph-io/dgraph/blob/master/contrib/config/docker/docker-compose.yml
-#  zero:
-#    image: dgraph/dgraph:v20.11.0
-#    volumes:
-#      - /tmp/data:/dgraph
-#    ports:
-#      - 5080:5080
-#      - 6080:6080
-#    restart: on-failure
-#    command: dgraph zero --my=zero:5080
-#    logging:
-#      driver: none
-#  alpha:
-#    image: dgraph/dgraph:v20.11.0
-#    volumes:
-#      - /tmp/data:/dgraph
-#    ports:
-#      - 8080:8080
-#      - 9080:9080
-#    restart: on-failure
-#    command: dgraph alpha --my=alpha:7080 --zero=zero:5080
-#    logging:
-#      driver: none
-#    healthcheck:
-#      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-#  ratel:
-#    image: dgraph/dgraph:v20.11.0
-#    ports:
-#      - 8000:8000
-#    command: dgraph-ratel
-#    logging:
-#      driver: none
-
-#  # RabbitMQ
-#  rabbitmq:
-#    image: rabbitmq:3-management
-#    ports:
-#      - 5672:5672
-#  #    deploy:
-#  #      resources:
-#  #        limits:
-#  #          cpus: '0.1'
-#  wait-for-rabbit: # initContainer waiting for RabbitMQ
-#    image: endocode/rabbit-poller:latest
-#    depends_on:
-#      - rabbitmq
-#    environment:
-#      RABBIT_HOST: "rabbitmq"
-#      RABBIT_PORT: "5672"
+      - buildroot-volume:/var/qmstr/buildroot
 
 volumes:
   buildroot-volume:
-
-
