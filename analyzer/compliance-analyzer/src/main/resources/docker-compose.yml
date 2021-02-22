@@ -102,7 +102,7 @@ services:
 
   # Quartermaster master
   master:
-    image: endocodeci/qmstr-master:sha-6f14b29
+    image: endocodeci/qmstr-master:sha-77f2904
     depends_on:
       # Cloned & patched repository
       repo-cloner:
@@ -142,11 +142,12 @@ services:
 
         # Waiting for DGraph alpha to be ready
         # python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health'))"
-        while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health').getcode())")" -ne 200 ]; do
-          echo "...waiting for DGraph to be ready."
-          sleep 3
-        done
-        echo "...DGraph is ready."
+        #while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health').getcode())")" -ne 200 ]; do
+        #  echo "...waiting for DGraph to be ready."
+        #  sleep 3
+        #done
+        #echo "...DGraph is ready."
+        sleep 50
 
         # Start the master process
         /usr/local/bin/qmstr-master --config /home/qmstr/config/qmstr.yaml
@@ -201,11 +202,12 @@ services:
 
         # Waiting for DGraph alpha to be ready
         # python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health'))"
-        while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health').getcode())")" -ne 200 ]; do
-          echo "...waiting for DGraph to be ready."
-          sleep 3
-        done
-        echo "...DGraph is ready."
+        #while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health').getcode())")" -ne 200 ]; do
+        #  echo "...waiting for DGraph to be ready."
+        #  sleep 3
+        #done
+        #echo "...DGraph is ready."
+        sleep 60
 
         # Building the project
         mvn package -Dmaven.test.skip=true
