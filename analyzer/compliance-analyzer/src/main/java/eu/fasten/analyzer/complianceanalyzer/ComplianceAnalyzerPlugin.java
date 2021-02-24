@@ -88,7 +88,7 @@ public class ComplianceAnalyzerPlugin extends Plugin {
                     environment.start();
 
                     // TODO Introduce waiting instruction(s)
-                    // environment.wait(10000L);
+                    environment.wait(10000L);
                 }
 
             } catch (Exception e) { // Fasten error-handling guidelines
