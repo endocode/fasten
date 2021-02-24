@@ -73,8 +73,8 @@ services:
       - |
         set -ex
         dgraph zero --my=zero:5080
-    logging:
-      driver: none
+#    logging:
+#      driver: none
   alpha:
     image: dgraph/dgraph:v20.11.0
     volumes:
@@ -97,8 +97,8 @@ services:
     ports:
       - 8000:8000
     command: dgraph-ratel
-    logging:
-      driver: none
+#    logging:
+#      driver: none
 
   # Quartermaster master
   master:
