@@ -83,7 +83,6 @@ public class ComplianceAnalyzerPlugin extends Plugin {
                              new DockerComposeContainer(dockerComposeFile)
                                      .withEnv("REPOSITORY_URL", repoUrl)
                                      .withExposedService("alpha", 8080, Wait.forHttp("/health")) // DGraph
-                                     .withExposedService("rabbitmq", 5672) // an initContainer wait for RabbitMQ
                 ) {
 
                     environment.start();
