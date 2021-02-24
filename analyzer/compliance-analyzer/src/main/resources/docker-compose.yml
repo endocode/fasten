@@ -5,7 +5,7 @@ services:
   # Clones the repository
   repo-cloner:
     image: alpine/git:v2.26.2
-    entrypoint: ["sh", "-c"]
+    entrypoint: [ "sh", "-c" ]
     # TODO Substitute repo URL with "${REPOSITORY_URL}"
     command:
       - |
@@ -28,7 +28,7 @@ services:
   # Pom patcher
   pom-patcher:
     image: endocodeci/pom-patch:sha-c47d6c5
-    entrypoint: ["sh", "-c"]
+    entrypoint: [ "sh", "-c" ]
     command:
       - |
         set -e
@@ -105,17 +105,12 @@ services:
     image: endocodeci/qmstr-master:sha-77f2904
     depends_on:
       # Cloned & patched repository
-      repo-cloner:
-        condition: service_started
-      pom-patcher:
-        condition: service_started
+      - repo-cloner
+      - pom-patcher
       # DGraph
-      zero:
-        condition: service_started
-      alpha:
-        condition: service_healthy
-      ratel:
-        condition: service_started
+      - zero
+      - alpha
+      - ratel
     entrypoint: [ "sh", "-c" ]
     command:
       - |
@@ -162,20 +157,14 @@ services:
     image: endocode/qmstr-client-mvn:fasten-reporter-curl
     depends_on:
       # Master
-      master:
-        condition: service_started
+      - master
       # Cloned & patched repository
-      repo-cloner:
-        condition: service_started
-      pom-patcher:
-        condition: service_started
+      - repo-cloner
+      - pom-patcher
       # DGraph
-      zero:
-        condition: service_started
-      alpha:
-        condition: service_healthy
-      ratel:
-        condition: service_started
+      - zero
+      - alpha
+      - ratel
     entrypoint: [ "sh", "-c" ]
     command:
       - |
