@@ -6,13 +6,12 @@ services:
   repo-cloner:
     image: alpine/git:v2.26.2
     entrypoint: [ "sh", "-c" ]
-    # TODO Substitute repo URL with "${REPOSITORY_URL}"
     command:
       - |
         set -e
 
         # Cloning the repository
-        git clone --verbose https://github.com/bytedeco/javacv /home/git/buildroot/project
+        git clone --verbose $${REPOSITORY_URL} /home/git/buildroot/project
         echo "...cloning done."
 
         # Fixing shared volume permissions
