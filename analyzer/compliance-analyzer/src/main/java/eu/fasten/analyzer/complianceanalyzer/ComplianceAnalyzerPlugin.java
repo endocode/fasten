@@ -82,7 +82,7 @@ public class ComplianceAnalyzerPlugin extends Plugin {
                 try (DockerComposeContainer environment =
                              new DockerComposeContainer(dockerComposeFile)
                                      .withEnv("REPOSITORY_URL", repoUrl)
-                                     .withExposedService("alpha", 8080, Wait.forHttp("/health")) // DGraph
+                                     .withExposedService("alpha", 8080) // DGraph
                 ) {
 
                     environment.start();
