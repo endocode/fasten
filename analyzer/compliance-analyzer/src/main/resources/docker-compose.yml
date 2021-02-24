@@ -142,12 +142,11 @@ services:
 
         # Waiting for DGraph alpha to be ready
         # python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health'))"
-        #while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health').getcode())")" -ne 200 ]; do
-        #  echo "...waiting for DGraph to be ready."
-        #  sleep 3
-        #done
-        #echo "...DGraph is ready."
-        sleep 50
+        while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health').getcode())")" -ne 200 ]; do
+          echo "...waiting for DGraph to be ready."
+          sleep 3
+        done
+        echo "...DGraph is ready."
 
         # Start the master process
         /usr/local/bin/qmstr-master --config /home/qmstr/config/qmstr.yaml
@@ -202,12 +201,11 @@ services:
 
         # Waiting for DGraph alpha to be ready
         # python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health'))"
-        #while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health').getcode())")" -ne 200 ]; do
-        #  echo "...waiting for DGraph to be ready."
-        #  sleep 3
-        #done
-        #echo "...DGraph is ready."
-        sleep 60
+        while [ "$$(python3 -c "import urllib.request as r; print(r.urlopen('http://alpha:8080/health').getcode())")" -ne 200 ]; do
+          echo "...waiting for DGraph to be ready."
+          sleep 3
+        done
+        echo "...DGraph is ready."
 
         # Building the project
         mvn package -Dmaven.test.skip=true
