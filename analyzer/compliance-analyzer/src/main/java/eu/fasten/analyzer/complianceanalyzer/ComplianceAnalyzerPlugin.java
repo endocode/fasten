@@ -22,11 +22,6 @@ import java.util.Optional;
  */
 public class ComplianceAnalyzerPlugin extends Plugin {
 
-    /**
-     * Name of the environment variable containing the cluster credentials file path.
-     */
-    protected static final String CLUSTER_CREDENTIALS_ENV = "clusterCredentials";
-
     public ComplianceAnalyzerPlugin(PluginWrapper wrapper) {
         super(wrapper);
     }
