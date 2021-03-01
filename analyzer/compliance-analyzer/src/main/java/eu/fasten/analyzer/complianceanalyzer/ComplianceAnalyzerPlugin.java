@@ -1,6 +1,7 @@
 package eu.fasten.analyzer.complianceanalyzer;
 
 import eu.fasten.core.plugins.KafkaPlugin;
+import org.apache.commons.io.FileUtils;
 import org.json.JSONObject;
 import org.pf4j.Extension;
 import org.pf4j.Plugin;
@@ -8,9 +9,9 @@ import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.DockerComposeContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -70,20 +71,21 @@ public class ComplianceAnalyzerPlugin extends Plugin {
                 }
 
                 // Retrieving the Docker-compose file
-                File dockerComposeFile =
-                        new File(ComplianceAnalyzerPlugin.class.getResource("/docker-compose.yml").getPath());
+                try (InputStream in = getClass().getResourceAsStream("/docker-compose.yml")) {
 
-                // Launching Quartermaster
-                try (DockerComposeContainer environment =
-                             new DockerComposeContainer(dockerComposeFile)
-                                     .withEnv("REPOSITORY_URL", repoUrl)
-                                     .withExposedService("alpha", 8080) // DGraph
-                ) {
+                    // Converting it into a File (`InputStream` needed by JAR)
+                    File f = new File("docker-compose.yml");
+                    FileUtils.copyInputStreamToFile(in, f);
 
-                    environment.start();
-
-                    // TODO Introduce waiting instruction(s)
-                    environment.wait(10000L);
+                    // Launching Quartermaster
+                    try (DockerComposeContainer environment =
+                                 new DockerComposeContainer(f)
+                                         .withEnv("REPOSITORY_URL", repoUrl)
+                                         .withExposedService("alpha", 8080) // DGraph
+                    ) {
+                        environment.start();
+                        environment.wait(10000L); // TODO Introduce waiting instruction(s)
+                    }
                 }
 
             } catch (Exception e) { // Fasten error-handling guidelines
