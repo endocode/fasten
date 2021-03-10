@@ -8,13 +8,16 @@ import org.pf4j.Plugin;
 import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.DockerComposeContainer;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 
 /**
@@ -35,6 +38,21 @@ public class ComplianceAnalyzerPlugin extends Plugin {
         protected String consumerTopic = "fasten.RepoCloner.out";
         protected Throwable pluginError = null;
         protected String repoUrl;
+
+        private static class StreamGobbler implements Runnable {
+            private final InputStream inputStream;
+            private final Consumer<String> consumer;
+
+            public StreamGobbler(InputStream inputStream, Consumer<String> consumer) {
+                this.inputStream = inputStream;
+                this.consumer = consumer;
+            }
+
+            @Override
+            public void run() {
+                new BufferedReader(new InputStreamReader(inputStream)).lines().forEach(consumer);
+            }
+        }
 
         @Override
         public Optional<List<String>> consumeTopic() {
@@ -77,15 +95,36 @@ public class ComplianceAnalyzerPlugin extends Plugin {
                     File f = new File("docker-compose.yml");
                     FileUtils.copyInputStreamToFile(in, f);
 
-                    // Launching Quartermaster
-                    try (DockerComposeContainer environment =
-                                 new DockerComposeContainer(f)
-                                         .withEnv("REPOSITORY_URL", repoUrl)
-                                         .withExposedService("alpha", 8080) // DGraph
-                    ) {
-                        environment.start();
-                        environment.wait(10000L); // TODO Introduce waiting instruction(s)
-                    }
+                    // Running Quartermaster
+                    Process process = Runtime.getRuntime().exec(
+                            new String[]{
+                                    "sh",
+                                    "-c",
+
+                                    // Runs Quartermaster locally
+                                    "docker-compose " +
+                                            "--file " + f.getAbsolutePath() + " " +
+                                            "up " +
+                                            "--remove-orphans " +
+                                            "--renew-anon-volumes " +
+                                            // "--exit-code-from client " + // FIXME Causes exit code 137 by client
+                                            "&& " +
+
+                                            // Cleans resources immediately after
+                                            "docker-compose " +
+                                            "--file " + f.getAbsolutePath() + " " +
+                                            "down " +
+                                            "--volumes " +
+                                            "--remove-orphans"
+                            },
+
+                            // setting the repo URL as an ENV variable
+                            new String[]{"REPOSITORY_URL=" + repoUrl}
+                    );
+                    StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), logger::info);
+                    Executors.newSingleThreadExecutor().submit(streamGobbler);
+                    int exitCode = process.waitFor();
+                    assert exitCode == 0;
                 }
 
             } catch (Exception e) { // Fasten error-handling guidelines

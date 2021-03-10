@@ -2,6 +2,10 @@ version: '3.4'
 
 services:
 
+  ##################
+  # InitContainers #
+  ##################
+
   # Clones the repository
   repo-cloner:
     image: alpine/git:v2.26.2
@@ -27,6 +31,8 @@ services:
   # Pom patcher
   pom-patcher:
     image: endocodeci/pom-patch:sha-c47d6c5
+    depends_on:
+      - repo-cloner
     entrypoint: [ "sh", "-c" ]
     command:
       - |
@@ -52,17 +58,16 @@ services:
           echo "...pom.xml file patching failed."
           exit $$?
         fi
-    depends_on:
-      - repo-cloner
     volumes:
       - buildroot-volume:/home/configure/buildroot
 
-  # DGraph
-  # From: https://github.com/dgraph-io/dgraph/blob/master/contrib/config/docker/docker-compose.yml
+  ##################################################################################################
+  # DGraph                                                                                         #
+  # From: https://github.com/dgraph-io/dgraph/blob/master/contrib/config/docker/docker-compose.yml #
+  ##################################################################################################
+
   zero:
-    image: dgraph/dgraph:v20.11.0
-    volumes:
-      - /tmp/data:/dgraph
+    image: dgraph/dgraph:v20.11.2
     ports:
       - 5080:5080
       - 6080:6080
@@ -72,12 +77,8 @@ services:
       - |
         set -ex
         dgraph zero --my=zero:5080
-#    logging:
-#      driver: none
   alpha:
-    image: dgraph/dgraph:v20.11.0
-    volumes:
-      - /tmp/data:/dgraph
+    image: dgraph/dgraph:v20.11.2
     ports:
       - 8080:8080
       - 9080:9080
@@ -87,19 +88,18 @@ services:
       - |
         set -e
         dgraph alpha --whitelist 0.0.0.0/0 --my=alpha:7080 --zero=zero:5080 --lru_mb 2048
-#    logging:
-#      driver: none
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
   ratel:
-    image: dgraph/dgraph:v20.11.0
+    image: dgraph/dgraph:v20.11.2
     ports:
       - 8000:8000
     command: dgraph-ratel
-#    logging:
-#      driver: none
 
-  # Quartermaster master
+  #################
+  # Quartermaster #
+  #################
+
   master:
     image: endocodeci/qmstr-master:sha-77f2904
     depends_on:
@@ -149,7 +149,7 @@ services:
     environment:
       - SERVER_BUILDPATH="/var/qmstr/buildroot"
     volumes:
-      - ./qmstr-config.yaml:/home/qmstr/config/qmstr.yaml
+      - ./analyzer/compliance-analyzer/src/main/resources/qmstr-config.yaml:/home/qmstr/config/qmstr.yaml
       - buildroot-volume:/var/qmstr/buildroot/
 
   client:
@@ -168,6 +168,7 @@ services:
     command:
       - |
         set -e
+        set -x
 
         # Moving to the repository folder: counting files & directories (including hidden ones) will be easier
         cd /var/qmstr/buildroot/project
@@ -197,6 +198,11 @@ services:
 
         # Building the project
         mvn package -Dmaven.test.skip=true
+
+        # Analyzing licenses
+        touch ../scancode.json
+        chmod 777 ../scancode.json
+        qmstrctl analyze --verbose
     environment:
       - QMSTRADDRENV=master:50051
       - QMSTR_MASTER=master:50051
