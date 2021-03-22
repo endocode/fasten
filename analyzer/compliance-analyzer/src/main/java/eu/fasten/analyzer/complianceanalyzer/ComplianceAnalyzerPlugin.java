@@ -96,7 +96,7 @@ public class ComplianceAnalyzerPlugin extends Plugin {
                     FileUtils.copyInputStreamToFile(in, f);
 
                     // Running Quartermaster
-                    Process process = Runtime.getRuntime().exec(
+                    Process qmstrProc = Runtime.getRuntime().exec(
                             new String[]{
                                     "sh",
                                     "-c",
@@ -106,25 +106,44 @@ public class ComplianceAnalyzerPlugin extends Plugin {
                                             "--file " + f.getAbsolutePath() + " " +
                                             "up " +
                                             "--remove-orphans " +
-                                            "--renew-anon-volumes " +
-                                            // "--exit-code-from client " + // FIXME Causes exit code 137 by client
-                                            "&& " +
-
-                                            // Cleans resources immediately after
-                                            "docker-compose " +
-                                            "--file " + f.getAbsolutePath() + " " +
-                                            "down " +
-                                            "--volumes " +
-                                            "--remove-orphans"
+                                            "--renew-anon-volumes "
                             },
 
                             // setting the repo URL as an ENV variable
                             new String[]{"REPOSITORY_URL=" + repoUrl}
                     );
-                    StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), logger::info);
-                    Executors.newSingleThreadExecutor().submit(streamGobbler);
-                    int exitCode = process.waitFor();
-                    assert exitCode == 0;
+                    StreamGobbler qmstrStreamGobbler = new StreamGobbler(qmstrProc.getInputStream(), logger::info);
+                    Executors.newSingleThreadExecutor().submit(qmstrStreamGobbler);
+
+                    // Waiting for the Quartermaster's client exit code
+                    Process clientExitCodeWaiterProc = Runtime.getRuntime().exec(
+                            new String[]{"sh", "-c", "docker wait client"}
+                    );
+                    StreamGobbler clientExitCodeWaiterStreamGobbler = new StreamGobbler(
+                            clientExitCodeWaiterProc.getInputStream(), logger::info
+                    );
+                    Executors.newSingleThreadExecutor().submit(clientExitCodeWaiterStreamGobbler);
+                    clientExitCodeWaiterProc.waitFor();
+                    // TODO Inspect Quartermaster's client exit code
+
+                    // Cleaning resources
+                    Process cleaningProc = Runtime.getRuntime().exec(
+                            new String[]{
+                                    "sh",
+                                    "-c",
+
+                                    "docker-compose " +
+                                            "--file " + f.getAbsolutePath() + " " +
+                                            "down " +
+                                            "--volumes " +
+                                            "--remove-orphans"
+                            }
+                    );
+                    StreamGobbler cleaningStreamGobbler = new StreamGobbler(cleaningProc.getInputStream(), logger::info);
+                    Executors.newSingleThreadExecutor().submit(cleaningStreamGobbler);
+                    int cleaningExitCode = cleaningProc.waitFor();
+                    assert cleaningExitCode == 0;
+                    // TODO Handle cleaning failure
                 }
 
             } catch (Exception e) { // Fasten error-handling guidelines

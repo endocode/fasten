@@ -153,6 +153,7 @@ services:
       - buildroot-volume:/var/qmstr/buildroot/
 
   client:
+    container_name: client
     image: endocode/qmstr-client-mvn:fasten-reporter-curl
     depends_on:
       # Master
