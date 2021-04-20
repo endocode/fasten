@@ -75,20 +75,20 @@ public class KnowledgeBaseConnector {
     /**
      * Path to the serialized dependency graph
      */
-    @Value("${kb.depgraph.path}")
-    private String depGraphPath;
-
-    @Value("${kb.graphdb.path}")
-    private String graphdbPath;
-
-    @Value("${lima.rcg.url}")
-    private String rcgUrl;
-
-    @Value("${kafka.address}")
-    private String kafkaAddress;
-
-    @Value("${kafka.output.topic}")
-    private String kafkaOutputTopic;
+//    @Value("${kb.depgraph.path}")
+//    private String depGraphPath;
+//
+//    @Value("${kb.graphdb.path}")
+//    private String graphdbPath;
+//
+//    @Value("${lima.rcg.url}")
+//    private String rcgUrl;
+//
+//    @Value("${kafka.address}")
+//    private String kafkaAddress;
+//
+//    @Value("${kafka.output.topic}")
+//    private String kafkaOutputTopic;
 
     /**
      * Connects to the KnowledgeBase before starting the REST server.
@@ -106,48 +106,48 @@ public class KnowledgeBaseConnector {
         logger.info("...KnowledgeBase connection established successfully.");
     }
 
-    /**
-     * Sets base URL for retrieving JSON RCGs.
-     */
-    @PostConstruct
-    public void setLimaUrl() {
-        KnowledgeBaseConnector.rcgBaseUrl = this.rcgUrl;
-        logger.info("RCG base URL successfully set");
-    }
+//    /**
+//     * Sets base URL for retrieving JSON RCGs.
+//     */
+//    @PostConstruct
+//    public void setLimaUrl() {
+//        KnowledgeBaseConnector.rcgBaseUrl = this.rcgUrl;
+//        logger.info("RCG base URL successfully set");
+//    }
 
 
-    /**
-     * Retrieves the dependency graph if possible, otherwise constructs the graph from database.
-     */
-    @PostConstruct
-    public void setDependencyGraphPath() {
-        KnowledgeBaseConnector.dependencyGraphPath = depGraphPath;
-    }
+//    /**
+//     * Retrieves the dependency graph if possible, otherwise constructs the graph from database.
+//     */
+//    @PostConstruct
+//    public void setDependencyGraphPath() {
+//        KnowledgeBaseConnector.dependencyGraphPath = depGraphPath;
+//    }
 
-    /**
-     * Established read-only connection to the graph database.
-     */
-    @PostConstruct
-    public void connectToGraphDB() {
-        logger.info("Establishing connection to the Graph Database at " + graphdbPath + "...");
-        try {
-            graphDao = RocksDBConnector.createReadOnlyRocksDBAccessObject(graphdbPath);
-        } catch (RuntimeException e) {
-            logger.error("Couldn't connect to the Graph Database", e);
-            System.exit(1);
-        }
-        logger.info("...Graph database connection established successfully.");
-    }
+//    /**
+//     * Established read-only connection to the graph database.
+//     */
+//    @PostConstruct
+//    public void connectToGraphDB() {
+//        logger.info("Establishing connection to the Graph Database at " + graphdbPath + "...");
+//        try {
+//            graphDao = RocksDBConnector.createReadOnlyRocksDBAccessObject(graphdbPath);
+//        } catch (RuntimeException e) {
+//            logger.error("Couldn't connect to the Graph Database", e);
+//            System.exit(1);
+//        }
+//        logger.info("...Graph database connection established successfully.");
+//    }
 
-    @PostConstruct
-    public void initKafkaProducer() {
-        ingestTopic = this.kafkaOutputTopic;
-        var producerProperties = new Properties();
-        producerProperties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaAddress);
-        producerProperties.setProperty(ProducerConfig.CLIENT_ID_CONFIG, "fasten_restapi_producer");
-        producerProperties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        producerProperties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-        producerProperties.setProperty(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, "1000000");
-        kafkaProducer = new KafkaProducer<>(producerProperties);
-    }
+//    @PostConstruct
+//    public void initKafkaProducer() {
+//        ingestTopic = this.kafkaOutputTopic;
+//        var producerProperties = new Properties();
+//        producerProperties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaAddress);
+//        producerProperties.setProperty(ProducerConfig.CLIENT_ID_CONFIG, "fasten_restapi_producer");
+//        producerProperties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+//        producerProperties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+//        producerProperties.setProperty(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, "1000000");
+//        kafkaProducer = new KafkaProducer<>(producerProperties);
+//    }
 }
