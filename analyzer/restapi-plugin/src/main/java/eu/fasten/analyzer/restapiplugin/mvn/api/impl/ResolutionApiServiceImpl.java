@@ -161,8 +161,7 @@ public class ResolutionApiServiceImpl implements ResolutionApiService {
             } catch (RocksDBException e) {
                 return new ResponseEntity<>("Could not retrieve callgraph from the graph database",
                         HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-            if (graph == null) {
+            } catch (NullPointerException e) {
                 return new ResponseEntity<>("Callgraph not found in the graph database", HttpStatus.NOT_FOUND);
             }
         }
