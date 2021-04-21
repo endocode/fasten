@@ -18,8 +18,8 @@
 
 package eu.fasten.analyzer.restapiplugin.mvn.api.impl;
 
-import eu.fasten.analyzer.restapiplugin.mvn.KnowledgeBaseConnector;
-import eu.fasten.analyzer.restapiplugin.mvn.LazyIngestionProvider;
+import eu.fasten.analyzer.restapiplugin.KnowledgeBaseConnector;
+import eu.fasten.analyzer.restapiplugin.LazyIngestionProvider;
 import eu.fasten.analyzer.restapiplugin.mvn.api.CallableApiService;
 import eu.fasten.core.maven.data.PackageVersionNotFoundException;
 import org.json.JSONObject;

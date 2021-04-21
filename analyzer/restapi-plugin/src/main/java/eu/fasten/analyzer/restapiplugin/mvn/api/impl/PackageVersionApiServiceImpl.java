@@ -18,7 +18,7 @@
 
 package eu.fasten.analyzer.restapiplugin.mvn.api.impl;
 
-import eu.fasten.analyzer.restapiplugin.mvn.KnowledgeBaseConnector;
+import eu.fasten.analyzer.restapiplugin.KnowledgeBaseConnector;
 import eu.fasten.analyzer.restapiplugin.mvn.api.PackageVersionApiService;
 import eu.fasten.core.data.Constants;
 import org.springframework.http.HttpStatus;

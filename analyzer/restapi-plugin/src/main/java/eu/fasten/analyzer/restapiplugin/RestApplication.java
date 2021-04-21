@@ -16,28 +16,21 @@
  * limitations under the License.
  */
 
-package eu.fasten.analyzer.restapiplugin.mvn;
+package eu.fasten.analyzer.restapiplugin;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-public class KafkaWriter {
+@SpringBootApplication
+public class RestApplication {
 
-    private static final Logger logger = LoggerFactory.getLogger(KafkaWriter.class.getName());
+    /**
+     * Default page size (pagination is always enabled).
+     */
+    public static final String DEFAULT_PAGE_SIZE = "10";
 
-    public static void sendToKafka(KafkaProducer<String, String> producer, String topic, String msg) {
-        ProducerRecord<String, String> record = new ProducerRecord<>(topic, msg);
-
-        producer.send(record, (recordMetadata, e) -> {
-            if (recordMetadata != null) {
-                logger.debug("Sent: {} to {}", msg, topic);
-            } else {
-                e.printStackTrace();
-            }
-        });
-
-        producer.flush();
+    public static void main(String[] args) {
+        SpringApplication.run(RestApplication.class, args);
+        GraphResolverInitializer.sendRequestToInitGraphResolver();
     }
 }

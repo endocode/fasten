@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package eu.fasten.analyzer.restapiplugin.mvn;
+package eu.fasten.analyzer.restapiplugin;
 
 import eu.fasten.core.data.Constants;
 import eu.fasten.core.data.metadatadb.codegen.tables.records.IngestedArtifactsRecord;

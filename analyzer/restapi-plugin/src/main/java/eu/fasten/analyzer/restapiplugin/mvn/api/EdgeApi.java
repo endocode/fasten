@@ -18,7 +18,7 @@
 
 package eu.fasten.analyzer.restapiplugin.mvn.api;
 
-import eu.fasten.analyzer.restapiplugin.mvn.RestApplication;
+import eu.fasten.analyzer.restapiplugin.RestApplication;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
