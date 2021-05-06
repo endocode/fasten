@@ -33,16 +33,16 @@ public class ResolutionApi {
     public ResolutionApi(ResolutionApiService service) {
         this.service = service;
     }
-
-    @GetMapping(value = "/mvn/packages/{pkg}/{pkg_ver}/resolve/dependencies", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<String> resolveDependencies(@PathVariable("pkg") String package_name,
-                                               @PathVariable("pkg_ver") String package_version,
-                                               @RequestParam(required = false, defaultValue = "true") boolean transitive,
-                                               @RequestParam(required = false, defaultValue = "-1") long timestamp,
-                                               @RequestParam(required = false, defaultValue = "false") boolean useDepGraph) {
-        return service.resolveDependencies(package_name, package_version, transitive, timestamp, useDepGraph);
-    }
-
+//
+//    @GetMapping(value = "/mvn/packages/{pkg}/{pkg_ver}/resolve/dependencies", produces = MediaType.APPLICATION_JSON_VALUE)
+//    ResponseEntity<String> resolveDependencies(@PathVariable("pkg") String package_name,
+//                                               @PathVariable("pkg_ver") String package_version,
+//                                               @RequestParam(required = false, defaultValue = "true") boolean transitive,
+//                                               @RequestParam(required = false, defaultValue = "-1") long timestamp,
+//                                               @RequestParam(required = false, defaultValue = "false") boolean useDepGraph) {
+//        return service.resolveDependencies(package_name, package_version, transitive, timestamp, useDepGraph);
+//    }
+//
     @GetMapping(value = "/mvn/packages/{pkg}/{pkg_ver}/resolve/dependents", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<String> resolveDependents(@PathVariable("pkg") String package_name,
                                              @PathVariable("pkg_ver") String package_version,

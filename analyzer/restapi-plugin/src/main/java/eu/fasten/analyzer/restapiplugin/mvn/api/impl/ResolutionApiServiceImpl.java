@@ -48,16 +48,16 @@ public class ResolutionApiServiceImpl implements ResolutionApiService {
     private static final Logger logger = LoggerFactory.getLogger(ResolutionApiServiceImpl.class);
     private GraphMavenResolver graphResolver;
 
-    public ResolutionApiServiceImpl() {
-        try {
-            var graphResolver = new GraphMavenResolver();
-            graphResolver.buildDependencyGraph(KnowledgeBaseConnector.dbContext, KnowledgeBaseConnector.dependencyGraphPath);
-            this.graphResolver = graphResolver;
-        } catch (Exception e) {
-            logger.error("Error constructing dependency graph resolver", e);
-            System.exit(1);
-        }
-    }
+//    public ResolutionApiServiceImpl() {
+//        try {
+//            var graphResolver = new GraphMavenResolver();
+//            graphResolver.buildDependencyGraph(KnowledgeBaseConnector.dbContext, KnowledgeBaseConnector.dependencyGraphPath);
+//            this.graphResolver = graphResolver;
+//        } catch (Exception e) {
+//            logger.error("Error constructing dependency graph resolver", e);
+//            System.exit(1);
+//        }
+//    }
 
     @Override
     public ResponseEntity<String> resolveDependencies(String package_name, String version, boolean transitive, long timestamp, boolean useDepGraph) {
